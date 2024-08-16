@@ -34,7 +34,7 @@ def parse_args():
  
     parser.add_argument('--encoder', default='nonlinear', type=str,
             required=False, help='sets encoding protocol', dest='encoder',
-            choices=['idlevel', 'randomproj', 'nonlinear'])
+            choices=['idlevel', 'randomproj', 'nonlinear', 'hprop'])
                 
     parser.add_argument('-nb', '--nonbin', action='store_true',
             required=False, help='do not apply binarize hypervectors in the selected encoding method',
@@ -57,6 +57,28 @@ def parse_args():
  
     parser.add_argument('-r', '--randomseed', default=0, type=int,
             required=False, help='set random seed', dest='random_seed')
+
+    # Hierarchical Sparse Encoders
+    parser.add_argument('-rfo', '--randomize_feature_order', action='store_true',
+            required=False, help='randomize feature order' +
+            'in hierarchical sparse encoders', dest='randomize_feature_order') 
+
+    parser.add_argument('-pd', '--propagation_decay', default=0.5, type=float, 
+            required=False, help='set propagation decay' +
+            'in hierarchical sparse encoders', dest='propagation_decay') 
+
+    parser.add_argument('-at', '--activation_threshold', default=0.5, type=float, 
+            required=False, help='set activation threshold' +
+            'in hierarchical sparse encoders', dest='activation_threshold') 
+
+    parser.add_argument('-st', '--use_soft_threshold', action='store_true',
+            required=False, help='use soft threshold' +
+            'in hierarchical sparse encoders', dest='use_soft_threshold') 
+
+    parser.add_argument('-hg', '--hierarchical_groups', default=4, type=float, 
+            required=False, help='set the number of feature groups' +
+            'in hierarchical sparse encoders', dest='n_groups') 
+
  
     args = parser.parse_args()
  

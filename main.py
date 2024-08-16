@@ -20,7 +20,7 @@ def main():
     setup_global_logger(args.logfile)
     setup_seed(args.random_seed)
     setup_global_sim_metric(args.sim_metric)
-    encode = choose_encoder(args.encoder, args.nonbinarize, args.q)
+    encode = choose_encoder(args.encoder, args.nonbinarize, args.q, args)
 
     # Data Loading
     log.d("Loading dataset " + args.filename)

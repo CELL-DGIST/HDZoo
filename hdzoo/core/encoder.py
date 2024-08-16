@@ -2,6 +2,8 @@
 HD Zoo - Yeseong Kim (CELL) @ DGIST, 2023
 """
 import torch
+import torch.nn.functional as func
+from torch import nn
 
 from tqdm import tqdm
 
@@ -9,7 +11,7 @@ from ..utils.logger import log
 
 
 """ Encoder selection """
-def choose_encoder(encoder, nonbinarize, q_in_idlevel):
+def choose_encoder(encoder, nonbinarize, q_in_idlevel, args):
     global encode
     if encoder == 'idlevel':
         # ID Level []
@@ -24,6 +26,11 @@ def choose_encoder(encoder, nonbinarize, q_in_idlevel):
         # nonlinear encoding []
         encode = encode_nonlinear
         log.d(">>>>> Non-linear encoding")
+    elif encoder == 'hprop':
+        # hiearachical propagation encoding
+        encode_hierarchical_propagation.args = args
+        encode = encode_hierarchical_propagation
+        log.d(">>>>> hprop encoding")
     else:
         raise NotImplementedError
 
@@ -153,6 +160,16 @@ def encode_nonlinear(x, x_test, D, y=None):
         for i in tqdm(range(0, N, batch_size)):
             torch.matmul(samples[i:i+batch_size], bases, out=H[i:i+batch_size])
             H[i:i+batch_size].cos_()
+
+            torch.set_printoptions(precision=2)
+            torch.set_printoptions(edgeitems=10)
+            print(H[i:i+batch_size][0])
+            print(torch.sum(H[i:i+batch_size]>0))
+            print(H[i:i+batch_size].size())
+            print(bases)
+
+            exit()
+
             if not encode.nonbinarize:
                 H[i:i+batch_size] = hardsign(H[i:i+batch_size])
         return H
@@ -161,5 +178,182 @@ def encode_nonlinear(x, x_test, D, y=None):
     x_test_h = None
     if x_test is not None:
         x_test_h = _encode(x_test, bases)
+
+    return x_h, x_test_h
+
+
+"""
+Hierarchical propagation encoding - Yeseong Kim, CELL 2024
+- Implemented as a torch module
+"""
+class HierarchicalPropagationEncoder(nn.Module):
+    def __init__(self, F, D, n_groups, randomize_feature_order=True, **kwargs):
+        super(HierarchicalPropagationEncoder, self).__init__()
+
+        # Sanity check of the configurations
+        assert D % n_groups == 0, "HierarchicalSparseEncoder: D must be divided by n_groups"
+
+        # Main hyperparameters
+        self.F = F
+        self.D = D
+        self.n_groups = n_groups
+        self.randomize_feature_order = randomize_feature_order
+
+        self.receptive_field_size = kwargs.get("receptive_field_size", 1)
+        self.propagation_decay = kwargs.get("propagation_decay", 0.7)
+        self.activation_threshold = kwargs.get("activation_threshold", 0.5)
+        self.use_soft_threshold = kwargs.get("use_soft_threshold", True)
+
+        if self.receptive_field_size != 1:
+            # Note: theoretically it is possible, but we currently implemented
+            # the field size 1 for the simplicity and computation efficiency
+            # (I also think there is no practical gain in accuracy even if
+            # it is more than 1. But, probably convolution-like data structure
+            # would require the support of these cases.)
+            raise NotImplemented  
+
+
+        device = kwargs.get("device", "cpu")  # TODO: check if it works or needed
+        self.to(device)
+
+        # Determine leaf-level encoder sizes
+        self.n_dims_per_group = D // n_groups
+        self.n_features_per_group = F // n_groups
+        if F % n_groups != 0:
+            self.n_features_per_group += 1
+            self.n_features_in_last_group = F % self.n_features_per_group
+        else:
+            self.n_features_in_last_group = self.n_features_per_group
+
+        # Create gaussian sampler for each group
+        # TODO: CSR-aware aligned shuffling for base matrix?
+        mu = 0.0
+        sigma = 1.0
+        self.bases = torch.empty(
+                self.n_groups, self.n_features_per_group, self.n_dims_per_group,
+                dtype=torch.float, device=device)
+        self.bases = self.bases.normal_(mu, sigma)
+        if self.n_features_in_last_group != self.n_features_per_group:
+            self.bases[-1, self.n_features_in_last_group:, :] = 0  # add padding
+
+        # Prepare the feature shuffler if randomize_feature_order == True
+        if self.randomize_feature_order:
+            self.feature_reorder = torch.randperm(F)
+            self.feature_reorder.to(device)
+
+
+    """
+    Return the grouped features
+    """
+    def preprocess_dataset(self, x):
+        if self.randomize_feature_order:
+            x = x[:, self.feature_reorder]
+        pad_size = self.n_features_per_group - self.n_features_in_last_group
+        x_padded = func.pad(x, (0, pad_size))
+        x_grouped = x_padded.reshape(x.size(0), self.n_groups, self.n_features_per_group)
+        return x_grouped
+
+
+    """
+    Encode proccess
+    - x: preprocessed dataset, i.e., (BATCH, N_GROUPS, GROUP_FEATURES)
+    """
+    def forward(self, x):
+        # internal function to apply sparsity-inducing activation (thresholding)
+        def sparsity_inducing_activation(H):
+            if self.use_soft_threshold:
+                H = torch.sign(H) * torch.relu(torch.abs(H) - self.activation_threshold) / (1 - self.activation_threshold)
+            else:
+                H[torch.abs(H) < self.activation_threshold] = 0
+            H = torch.clamp(H, -1, 1)  # TODO: Check if works
+            return H
+
+        # Step 1: Nonlinear encoding for all groups - leaf-level
+        # - bmm for (G, B, F') and (G, F', D)
+        #   where B is batch size, G is # groups, and F' is the # features/group
+        #   resulting in (G, B, D)
+        H = torch.bmm(x.transpose(0, 1), self.bases)  
+        H = H.transpose(0, 1)  # make (B, G, D)
+
+        #torch.set_printoptions(precision=2)
+        #torch.set_printoptions(edgeitems=10)
+        #print(H)
+        #print(torch.sum(H>0))
+        #print(H.size())
+        #exit()
+
+        H = sparsity_inducing_activation(H)
+        #return torch.sign(H.reshape(H.size(0), self.D))
+
+        # Step 2. Hierarchical propagation for receptive field increase
+        # - Future Idea: Instead of weighting the receptive field,
+        #                we may apply attention and learn them
+        # - Note: Current implementation for self.receptive_field_size == 1
+        propagation_depths = self.n_groups - 1
+
+        for d in range(propagation_depths):
+            H_r = torch.roll(H, shifts=1, dims=1)
+            H_l = torch.roll(H, shifts=-1, dims=1)
+
+            # Note: If you want to apply backprop or other learning methoa,
+            # the self.propagation_decay should be a form of tensors so that 
+            # it learns the different weight factors for each propagation
+            H += self.propagation_decay * H_r
+            H += self.propagation_decay * H_l
+            H = sparsity_inducing_activation(H)
+
+        #torch.set_printoptions(precision=2)
+        #torch.set_printoptions(edgeitems=10)
+        #print(H)
+        #print(torch.sum(H>0))
+        #print(torch.sum(H==0))
+        #print(H.size())
+        #exit()
+
+        H = torch.cos(H)
+        return H.reshape(H.size(0), self.D)
+
+
+"""
+Hierarchical propagation encode wrapper
+"""
+def encode_hierarchical_propagation(x, x_test, D, y=None):
+    # Rename command argument variable (given in choose_encoder)
+    args = encode_hierarchical_propagation.args
+
+    # Configurations
+    batch_size = 512  # no impacts on training quality
+    F = x.size(1)
+    n_groups = args.n_groups  # has impacts on the training quality
+
+    # Prepare encoder class instance
+    encoder = HierarchicalPropagationEncoder(
+            F, D, n_groups,
+            randomize_feature_order=args.randomize_feature_order,
+            propagation_decay=args.propagation_decay,
+            activation_threshold=args.activation_threshold,
+            use_soft_threshold=args.use_soft_threshold,
+            dtype=x.dtype, device=x.device)
+    encoder.eval()  # disable backprop
+
+    x_grouped = encoder.preprocess_dataset(x)
+    if x_test is not None:
+        x_test_grouped = encoder.preprocess_dataset(x_test)
+
+
+    # Main encoding function
+    def _encode(samples, encoder):
+        N = samples.size(0)
+        H = torch.empty(N, D, dtype=samples.dtype, device=samples.device)
+        for i in tqdm(range(0, N, batch_size)):
+            H_enc = encoder(samples[i:i+batch_size])
+            H[i:i+batch_size] = H_enc
+        return H
+
+    # Encode training and testing dataset
+    x_h = _encode(x_grouped, encoder)
+    x_test_h = None
+    if x_test is not None:
+        x_test_h = _encode(x_test_grouped, encoder)
 
     return x_h, x_test_h

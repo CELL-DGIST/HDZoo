@@ -161,3 +161,4 @@ cython_debug/
 HDzoo.cache/
 *.swp
 *.log
+*.choir_dat
