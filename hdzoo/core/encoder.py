@@ -5,9 +5,12 @@ import torch
 import torch.nn.functional as func
 from torch import nn
 
+import numpy as np
+
 from tqdm import tqdm
 
 from ..utils.logger import log
+from ..utils.timing import Timing, TimingCollector
 
 
 """ Encoder selection """
@@ -28,9 +31,13 @@ def choose_encoder(encoder, nonbinarize, q_in_idlevel, args):
         log.d(">>>>> Non-linear encoding")
     elif encoder == 'hprop':
         # hiearachical propagation encoding
-        encode_hierarchical_propagation.args = args
+        choose_encoder.args = args
         encode = encode_hierarchical_propagation
         log.d(">>>>> hprop encoding")
+    elif encoder == 'ae':
+        # auto encoding nonlinear
+        encode = encode_ae
+        log.d(">>>>> auto encoder encoding")
     else:
         raise NotImplementedError
 
@@ -161,20 +168,24 @@ def encode_nonlinear(x, x_test, D, y=None):
             torch.matmul(samples[i:i+batch_size], bases, out=H[i:i+batch_size])
             H[i:i+batch_size].cos_()
 
-            torch.set_printoptions(precision=2)
-            torch.set_printoptions(edgeitems=10)
-            print(H[i:i+batch_size][0])
-            print(torch.sum(H[i:i+batch_size]>0))
-            print(H[i:i+batch_size].size())
-            print(bases)
+            #torch.set_printoptions(precision=2)
+            #torch.set_printoptions(edgeitems=10)
+            #print(H[i:i+batch_size][0])
+            #print(torch.sum(H[i:i+batch_size]>0))
+            #print(H[i:i+batch_size].size())
+            #print(bases)
 
-            exit()
+            #exit()
 
             if not encode.nonbinarize:
                 H[i:i+batch_size] = hardsign(H[i:i+batch_size])
         return H
 
-    x_h = _encode(x, bases)
+    # Encode training and testing dataset
+    with Timing("Encode Nonlinear"):
+        x_h = _encode(x, bases)
+    TimingCollector.g_instance().print()
+
     x_test_h = None
     if x_test is not None:
         x_test_h = _encode(x_test, bases)
@@ -282,7 +293,8 @@ class HierarchicalPropagationEncoder(nn.Module):
         #print(H.size())
         #exit()
 
-        H = sparsity_inducing_activation(H)
+        #H = torch.cos(H)
+        #H = sparsity_inducing_activation(H)
         #return torch.sign(H.reshape(H.size(0), self.D))
 
         # Step 2. Hierarchical propagation for receptive field increase
@@ -291,35 +303,41 @@ class HierarchicalPropagationEncoder(nn.Module):
         # - Note: Current implementation for self.receptive_field_size == 1
         propagation_depths = self.n_groups - 1
 
-        for d in range(propagation_depths):
-            H_r = torch.roll(H, shifts=1, dims=1)
-            H_l = torch.roll(H, shifts=-1, dims=1)
+
+        H_r = torch.roll(H, shifts=1, dims=1)
+        for d in range(3): #propagation_depths/2):
+            #H_l = torch.roll(H, shifts=-1, dims=1)
 
             # Note: If you want to apply backprop or other learning methoa,
             # the self.propagation_decay should be a form of tensors so that 
             # it learns the different weight factors for each propagation
             H += self.propagation_decay * H_r
-            H += self.propagation_decay * H_l
+            #H += self.propagation_decay * H_l
+            #H = sparsity_inducing_activation(H)
+            H_r = torch.roll(H, shifts=1, dims=1)
             H = sparsity_inducing_activation(H)
+
+        #H = torch.cos(H)
+        #H = sparsity_inducing_activation(H)
 
         #torch.set_printoptions(precision=2)
         #torch.set_printoptions(edgeitems=10)
         #print(H)
-        #print(torch.sum(H>0))
-        #print(torch.sum(H==0))
-        #print(H.size())
+        print(H.size())
+        print(torch.sum(H>0))
+        print(torch.sum(H==0))
+        print(torch.numel(H))
+        print(torch.sum(H==0) / torch.numel(H))
         #exit()
 
-        H = torch.cos(H)
         return H.reshape(H.size(0), self.D)
-
 
 """
 Hierarchical propagation encode wrapper
 """
 def encode_hierarchical_propagation(x, x_test, D, y=None):
     # Rename command argument variable (given in choose_encoder)
-    args = encode_hierarchical_propagation.args
+    args = choose_encoder.args
 
     # Configurations
     batch_size = 512  # no impacts on training quality
@@ -351,9 +369,66 @@ def encode_hierarchical_propagation(x, x_test, D, y=None):
         return H
 
     # Encode training and testing dataset
-    x_h = _encode(x_grouped, encoder)
+    with Timing("Encode HPROP"):
+        x_h = _encode(x_grouped, encoder)
+    TimingCollector.g_instance().print()
+
     x_test_h = None
     if x_test is not None:
         x_test_h = _encode(x_test_grouped, encoder)
 
     return x_h, x_test_h
+
+
+def encode_ae(x, x_test, D, y=None):
+    # Gaussian sampler configuration
+    mu = 0.0
+    sigma = 1.0
+
+    d_prime = 100
+
+    # Configurations: no impacts on training quality
+    batch_size = 512
+    F = x.size(1)
+
+    # Create base hypervector
+    bases1 = torch.empty(F, d_prime, dtype=x.dtype, device=x.device)
+    bases1 = bases1.normal_(mu, sigma)
+
+    bases2 = torch.empty(d_prime, D, dtype=x.dtype, device=x.device)
+    bases2 = bases2.normal_(mu, sigma)
+
+    def _encode(samples, bases1, bases2):
+        N = samples.size(0)
+        H = torch.empty(N, D, dtype=samples.dtype, device=samples.device)
+        for i in tqdm(range(0, N, batch_size)):
+            H_prime = torch.matmul(samples[i:i+batch_size], bases1)
+            #H_prime = func.normalize(H_prime, p=2)
+            torch.matmul(H_prime, bases2, out=H[i:i+batch_size])
+            #H[i:i+batch_size] = H_prime
+            #H[i:i+batch_size] *= np.sqrt(np.pi/4) #d_prime * F)
+            H[i:i+batch_size].cos_()
+
+            #torch.set_printoptions(precision=2)
+            #torch.set_printoptions(edgeitems=10)
+            #print(H[i:i+batch_size][0])
+            #print(torch.sum(H[i:i+batch_size]>0))
+            #print(H[i:i+batch_size].size())
+            ##print(bases)
+            #exit()
+
+            if not encode.nonbinarize:
+                H[i:i+batch_size] = hardsign(H[i:i+batch_size])
+        return H
+
+    # Encode training and testing dataset
+    with Timing("Encode AE"):
+        x_h = _encode(x, bases1, bases2)
+    TimingCollector.g_instance().print()
+
+    x_test_h = None
+    if x_test is not None:
+        x_test_h = _encode(x_test, bases1, bases2)
+
+    return x_h, x_test_h
+
