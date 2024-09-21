@@ -1,4 +1,5 @@
 import time
+import torch
 
 from collections import defaultdict
 
@@ -39,17 +40,23 @@ TimingCollector.instance = None
 
 
 class Timing:
-    def __init__(self, tag, timing_collector=None):
+    def __init__(self, tag, sync_cuda=True, timing_collector=None):
         self.tag = tag
+        self.sync_cuda = sync_cuda
         if timing_collector is None:
             self.collector = TimingCollector.g_instance()
         else:
             self.collector = timing_collector
 
     def __enter__(self):
+        if self.sync_cuda:
+            torch.cuda.synchronize()
+
         self.start = time.perf_counter()
 
     def __exit__(self, t, v, tb):
+        if self.sync_cuda:
+            torch.cuda.synchronize()
         self.collector.add(
                 self.tag,
                 time.perf_counter() - self.start)
