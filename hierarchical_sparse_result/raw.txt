@@ -1,0 +1,99 @@
+(main) shepherd@holeinone:~/workspace/HDZoo$ ./test.sh dataset/mnist_train.choir_dat
+Random seed: 0
+Dot product similarity metric
+>>>>> hspa encoding (non binary)
+Loading dataset dataset/mnist_train.choir_dat
+mnist_train.choir_dat   60000 samples   784 features    10 classes
+mnist_test.choir_dat    10000 samples   784 features    10 classes
+Normalize with l2
+Encoding: D = 10000
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 118/118 [00:00<00:00, 138.57it/s]100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 118/118 [00:00<00:00, 22082.18it/s]Encode HSPA     0.013659358024597168    0.013659358024597168
+
+Sparsity(Training set): 0.9170668721199036
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 20/20 [00:00<00:00, 269.71it/s]Initialize empty models
+Retraining: B = 32
+  0%|                                                                                                                                                                                                                                                                                                                                                            | 0/50 [00:00<?, ?it/s]/home/shepherd/workspace/HDZoo/hdzoo/core/train.py:101: UserWarning: The use of `x.T` on tensors of dimension other than 2 to reverse their shape is deprecated and it will throw an error in a future release. Consider `x.mT` to transpose batches of matrices or `x.permute(*torch.arange(x.ndim - 1, -1, -1))` to reverse the dimensions of a tensor. (Triggered internally at /opt/conda/conda-bld/pytorch_1682343998658/work/aten/src/ATen/native/TensorShape.cpp:3571.)
+  n_correct_test = (y_test == y_test_pred.T).sum().cpu().numpy()
+ACC=1.0000 TACC=0.9641:  78%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████▋                                                                     | 39/50 [00:05<00:01,  7.67it/s]Fully trained. Stop.
+ACC=1.0000 TACC=0.9641:  78%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████▋                                                                     | 39/50 [00:05<00:01,  7.47it/s]Final Testing Accuracy  9641 / 10000 = 0.9641
+Random seed: 0
+Dot product similarity metric
+>>>>> Non-linear encoding (non binary)
+Loading dataset dataset/mnist_train.choir_dat
+mnist_train.choir_dat   60000 samples   784 features    10 classes
+mnist_test.choir_dat    10000 samples   784 features    10 classes
+Normalize with l2
+Encoding: D = 10000
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 118/118 [00:00<00:00, 9564.93it/s]Encode Nonlinear        0.041142569156363606    0.041142569156363606
+
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 20/20 [00:00<00:00, 86037.01it/s]Initialize empty models
+Retraining: B = 32
+  0%|                                                                                                                                                                                                                                                                                                                                                            | 0/50 [00:00<?, ?it/s]/home/shepherd/workspace/HDZoo/hdzoo/core/train.py:101: UserWarning: The use of `x.T` on tensors of dimension other than 2 to reverse their shape is deprecated and it will throw an error in a future release. Consider `x.mT` to transpose batches of matrices or `x.permute(*torch.arange(x.ndim - 1, -1, -1))` to reverse the dimensions of a tensor. (Triggered internally at /opt/conda/conda-bld/pytorch_1682343998658/work/aten/src/ATen/native/TensorShape.cpp:3571.)
+  n_correct_test = (y_test == y_test_pred.T).sum().cpu().numpy()
+ACC=0.9987 TACC=0.9776: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 50/50 [00:06<00:00,  7.28it/s]Final Testing Accuracy  9691 / 10000 = 0.9691
+(main) shepherd@holeinone:~/workspace/HDZoo$ ./test.sh dataset/sa12_train.choir_dat
+Random seed: 0
+Dot product similarity metric
+>>>>> hspa encoding (non binary)
+Loading dataset dataset/sa12_train.choir_dat
+sa12_train.choir_dat    6213 samples    561 features    12 classes
+sa12_test.choir_dat     1554 samples    561 features    12 classes
+Normalize with l2
+Encoding: D = 10000
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 13/13 [00:00<00:00, 15.58it/s]100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 13/13 [00:00<00:00, 17044.69it/s]Encode HSPA     0.00170752196572721     0.00170752196572721
+
+Sparsity(Training set): 0.9271442294120789
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4/4 [00:00<00:00, 54.47it/s]Initialize empty models
+Retraining: B = 32
+  0%|                                                                                                                                                                                                                                                                                                                                                            | 0/50 [00:00<?, ?it/s]/home/shepherd/workspace/HDZoo/hdzoo/core/train.py:101: UserWarning: The use of `x.T` on tensors of dimension other than 2 to reverse their shape is deprecated and it will throw an error in a future release. Consider `x.mT` to transpose batches of matrices or `x.permute(*torch.arange(x.ndim - 1, -1, -1))` to reverse the dimensions of a tensor. (Triggered internally at /opt/conda/conda-bld/pytorch_1682343998658/work/aten/src/ATen/native/TensorShape.cpp:3571.)
+  n_correct_test = (y_test == y_test_pred.T).sum().cpu().numpy()
+ACC=1.0000 TACC=0.9556:  46%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████▉                                                                                                                                                                          | 23/50 [00:00<00:00, 70.97it/s]Fully trained. Stop.
+ACC=1.0000 TACC=0.9556:  56%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████▍                                                                                                                                          | 28/50 [00:00<00:00, 68.30it/s]Final Testing Accuracy  1485 / 1554 = 0.9555984555984556
+Random seed: 0
+Dot product similarity metric
+>>>>> Non-linear encoding (non binary)
+Loading dataset dataset/sa12_train.choir_dat
+sa12_train.choir_dat    6213 samples    561 features    12 classes
+sa12_test.choir_dat     1554 samples    561 features    12 classes
+Normalize with l2
+Encoding: D = 10000
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 13/13 [00:00<00:00, 1123.23it/s]Encode Nonlinear        0.01449074107222259     0.01449074107222259
+
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4/4 [00:00<00:00, 50382.03it/s]Initialize empty models
+Retraining: B = 32
+  0%|                                                                                                                                                                                                                                                                                                                                                            | 0/50 [00:00<?, ?it/s]/home/shepherd/workspace/HDZoo/hdzoo/core/train.py:101: UserWarning: The use of `x.T` on tensors of dimension other than 2 to reverse their shape is deprecated and it will throw an error in a future release. Consider `x.mT` to transpose batches of matrices or `x.permute(*torch.arange(x.ndim - 1, -1, -1))` to reverse the dimensions of a tensor. (Triggered internally at /opt/conda/conda-bld/pytorch_1682343998658/work/aten/src/ATen/native/TensorShape.cpp:3571.)
+  n_correct_test = (y_test == y_test_pred.T).sum().cpu().numpy()
+ACC=0.9633 TACC=0.9447: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 50/50 [00:00<00:00, 67.20it/s]Final Testing Accuracy  1438 / 1554 = 0.9253539253539254
+(main) shepherd@holeinone:~/workspace/HDZoo$ ./test.sh dataset/isolet_train.choir_dat
+Random seed: 0
+Dot product similarity metric
+>>>>> hspa encoding (non binary)
+Loading dataset dataset/isolet_train.choir_dat
+isolet_train.choir_dat  6238 samples    617 features    26 classes
+isolet_test.choir_dat   1559 samples    617 features    26 classes
+Normalize with l2
+Encoding: D = 10000
+100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 13/13 [00:00<00:00, 13.98it/s]100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 13/13 [00:00<00:00, 15740.75it/s]Encode HSPA     0.0017418800853192806   0.0017418800853192806
+
+Sparsity(Training set): 0.9238265752792358
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4/4 [00:00<00:00, 23.99it/s]Initialize empty models
+Retraining: B = 32
+  0%|                                                                                                                                                                                                                                                                                                                                                            | 0/50 [00:00<?, ?it/s]/home/shepherd/workspace/HDZoo/hdzoo/core/train.py:101: UserWarning: The use of `x.T` on tensors of dimension other than 2 to reverse their shape is deprecated and it will throw an error in a future release. Consider `x.mT` to transpose batches of matrices or `x.permute(*torch.arange(x.ndim - 1, -1, -1))` to reverse the dimensions of a tensor. (Triggered internally at /opt/conda/conda-bld/pytorch_1682343998658/work/aten/src/ATen/native/TensorShape.cpp:3571.)
+  n_correct_test = (y_test == y_test_pred.T).sum().cpu().numpy()
+ACC=1.0000 TACC=0.9346:  30%|██████████████████████████████████████████████████████████████████████████████████████████████▌                                                                                                                                                                                                                            | 15/50 [00:00<00:00, 68.97it/s]Fully trained. Stop.
+ACC=1.0000 TACC=0.9346:  32%|████████████████████████████████████████████████████████████████████████████████████████████████████▊                                                                                                                                                                                                                      | 16/50 [00:00<00:00, 64.71it/s]Final Testing Accuracy  1457 / 1559 = 0.9345734445157152
+Random seed: 0
+Dot product similarity metric
+>>>>> Non-linear encoding (non binary)
+Loading dataset dataset/isolet_train.choir_dat
+isolet_train.choir_dat  6238 samples    617 features    26 classes
+isolet_test.choir_dat   1559 samples    617 features    26 classes
+Normalize with l2
+Encoding: D = 10000
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 13/13 [00:00<00:00, 1122.88it/s]Encode Nonlinear        0.01465465105138719     0.01465465105138719
+
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4/4 [00:00<00:00, 54120.05it/s]Initialize empty models
+Retraining: B = 32
+  0%|                                                                                                                                                                                                                                                                                                                                                            | 0/50 [00:00<?, ?it/s]/home/shepherd/workspace/HDZoo/hdzoo/core/train.py:101: UserWarning: The use of `x.T` on tensors of dimension other than 2 to reverse their shape is deprecated and it will throw an error in a future release. Consider `x.mT` to transpose batches of matrices or `x.permute(*torch.arange(x.ndim - 1, -1, -1))` to reverse the dimensions of a tensor. (Triggered internally at /opt/conda/conda-bld/pytorch_1682343998658/work/aten/src/ATen/native/TensorShape.cpp:3571.)
+  n_correct_test = (y_test == y_test_pred.T).sum().cpu().numpy()
+ACC=0.9937 TACC=0.9416: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 50/50 [00:00<00:00, 66.85it/s]Final Testing Accuracy  1487 / 1559 = 0.9538165490699166
