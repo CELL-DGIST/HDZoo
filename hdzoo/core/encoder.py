@@ -206,6 +206,12 @@ def hierarchical_propagation(H: torch.Tensor, shift: int, threshold: float):
 """
 Hierarchical sparse encoding (DATE'25) - Yeseong Kim, CELL 2024
 - Implemented as a torch module
+
+- Sample result (on 4090) for MNIST
+    Tested with -nb -at 0.4 -ats 0.2 -hg 25 -hd 2
+    Sparsity: 0.9170176386833191
+    Encoding time: 0.01373 (c.f., nonlinear: with 0.06157)
+    Accuracy: 96.36%
 """
 class HierarchicalSparseEncoder(nn.Module):
     def __init__(self, F, D, n_groups, n_depth, **kwargs):
@@ -344,7 +350,7 @@ def encode_hierarchical_sparse(x, x_test, D, y=None):
         x_h = _encode(x_grouped, encoder)
     TimingCollector.g_instance().print()
 
-    print("Sparsity : {}".format(torch.sum(x_h==0) / torch.numel(x_h)))
+    print("Sparsity(Training set): {}".format(torch.sum(x_h==0) / torch.numel(x_h)))
 
     x_test_h = None
     if x_test is not None:

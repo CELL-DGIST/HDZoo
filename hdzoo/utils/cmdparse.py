@@ -81,7 +81,6 @@ def parse_args():
             required=False, help='set activation threshold step' +
             'in hierarchical sparse encoders', dest='activation_threshold_step')
 
-
     parser.add_argument('-hg', '--hierarchical_groups', default=25, type=float, 
             required=False, help='set the number of feature groups' +
             'in hierarchical sparse encoders', dest='n_groups_hspa')
